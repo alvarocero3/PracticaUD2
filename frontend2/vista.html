@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Petición HTTP</title>
+        <style>
+            body {
+              font-family: Arial, sans-serif;
+              text-align: center;
+              padding: 50px;
+            }
+            button {
+              padding: 10px 20px;
+              font-size: 16px;
+              cursor: pointer;
+            }
+            #response {
+              margin-top: 20px;
+              font-size: 14px;
+              color: #333;
+            }
+          </style>
+    </head>
+    <body>
+ 
+    <h1>Hacer una petición HTTP</h1>
+
+    <button id="getHelloButton">GET /api/hello</button>
+    <button id="getHelloFileButton">GET /api/hello/{filename}</button>
+    <button id="postHelloButton">POST /api/hello</button>
+    <button id="putHelloFileButton">PUT /api/hello/{filename}</button>
+    <button id="deleteHelloFileButton">DELETE /api/hello/{filename}</button>
+
+    <h1>Hacer una petición JSON</h1>
+
+    <button id="getHelloButton2">GET /api/json</button>
+    <button id="getHelloFileButton2">GET /api/json/{filename}</button>
+    <button id="postHelloButton2">POST /api/json</button>
+    <button id="putHelloFileButton2">PUT /api/json/{filename}</button>
+    <button id="deleteHelloFileButton2">DELETE /api/json/{filename}</button>
+
+    <h1>Hacer una petición Csv</h1>
+
+    <button id="getCsvButton">GET /api/csv</button>
+    <button id="getCsvFileButton">GET /api/csv/{filename}</button>
+    <button id="postCsvButton">POST /api/csv</button>
+    <button id="putCsvFileButton">PUT /api/csv/{filename}</button>
+    <button id="deleteCsvFileButton">DELETE /api/csv/{filename}</button>
+
+    <div id="response3">Presiona un botón para obtener una respuesta</div>
+
+    <script>
+        const responseDiv = document.getElementById('response3');
+
+        document.getElementById('getHelloButton').addEventListener('click', async () => {
+            responseDiv.textContent = 'Cargando...';
+            try {
+                const response = await fetch('http://localhost:8000/api/hello');
+                if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+                const data = await response.text();
+                responseDiv.textContent = `Respuesta del servidor: ${data}`;
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+
+        document.getElementById('getHelloFileButton').addEventListener('click', async () => {
+            const filename = prompt('Introduce el nombre del archivo:');
+            if (filename) {
+                responseDiv.textContent = 'Cargando...';
+                try {
+                    const response = await fetch(`http://localhost:8000/api/hello/${filename}`);
+                    if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+                    const data = await response.text();
+                    responseDiv.textContent = `Respuesta del servidor: ${data}`;
+                } catch (error) {
+                    responseDiv.textContent = `Error: ${error.message}`;
+                }
+            }
+        });
+
+        document.getElementById('postHelloButton').addEventListener('click', () => {
+    // Mostrar un modal para ingresar el nombre del archivo y su contenido
+    const modalHtml = `
+        <div id="modal" style="display: block; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+            <div style="background-color: white; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 300px;">
+                <h2>Crear Archivo</h2>
+                <label for="filenameInput">Nombre del archivo:</label>
+                <input type="text" id="filenameInput" placeholder="Introduce el nombre del archivo">
+                <br><br>
+                <label for="contentInput">Contenido del archivo:</label>
+                <textarea id="contentInput" placeholder="Introduce el contenido del archivo"></textarea>
+                <br><br>
+                <button id="submitPost">Enviar</button>
+                <button id="closeModal">Cerrar</button>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Manejar el envío del formulario
+    document.getElementById('submitPost').addEventListener('click', async () => {
+        const filename = document.getElementById('filenameInput').value;
+        const content = document.getElementById('contentInput').value;
+        if (filename && content) {
+            responseDiv.textContent = 'Cargando...';
+            try {
+                const response = await fetch('http://localhost:8000/api/hello', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename, content }) // Enviar tanto el nombre como el contenido
+                });
+                if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+                const data = await response.text();
+                responseDiv.textContent = `Respuesta del servidor: ${data}`;
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                document.getElementById('modal').remove(); // Cerrar el modal después de enviar
+            }
+        } else {
+            responseDiv.textContent = 'Por favor, completa ambos campos.';
+        }
+    });
+
+    // Manejar el cierre del modal
+    document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('modal').remove(); // Cerrar el modal
+    });
+});
+
+document.getElementById('putHelloFileButton').addEventListener('click', () => {
+    // Mostrar un modal para ingresar el nombre del archivo y su nuevo contenido
+    const modalHtml = `
+        <div id="modal" style="display: block; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+            <div style="background-color: white; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 300px;">
+                <h2>Actualizar Archivo</h2>
+                <label for="filenameInput">Nombre del archivo:</label>
+                <input type="text" id="filenameInput" placeholder="Introduce el nombre del archivo">
+                <br><br>
+                <label for="contentInput">Nuevo contenido del archivo:</label>
+                <textarea id="contentInput" placeholder="Introduce el nuevo contenido del archivo"></textarea>
+                <br><br>
+                <button id="submitPut">Actualizar</button>
+                <button id="closeModal">Cerrar</button>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Manejar el envío del formulario
+    document.getElementById('submitPut').addEventListener('click', async () => {
+        const filename = document.getElementById('filenameInput').value;
+        const content = document.getElementById('contentInput').value;
+        if (filename && content) {
+            responseDiv.textContent = 'Cargando...';
+            try {
+                const response = await fetch(`http://localhost:8000/api/hello/${filename}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename, content }) // Enviar tanto el nombre como el nuevo contenido
+                });
+                if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+                const data = await response.text();
+                responseDiv.textContent = `Respuesta del servidor: ${data}`;
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                document.getElementById('modal').remove(); // Cerrar el modal después de enviar
+            }
+        } else {
+            responseDiv.textContent = 'Por favor, completa ambos campos.';
+        }
+    });
+
+    // Manejar el cierre del modal
+    document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('modal').remove(); // Cerrar el modal
+    });
+});
+
+        document.getElementById('deleteHelloFileButton').addEventListener('click', async () => {
+            const filename = prompt('Introduce el nombre del archivo para eliminar:');
+            if (filename) {
+                responseDiv.textContent = 'Cargando...';
+                try {
+                    const response = await fetch(`http://localhost:8000/api/hello/${filename}`, {
+                        method: 'DELETE'
+                    });
+                    if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+                    const data = await response.text();
+                    responseDiv.textContent = `Respuesta del servidor: ${data}`;
+                } catch (error) {
+                    responseDiv.textContent = `Error: ${error.message}`;
+                }
+            }
+        });
+        //------------------------------------------------------------------------------------------------------------------------------------
+        //ESTA PARTE PERTENECE AL JSON
+        //------------------------------------------------------------------------------------------------------------------------------------
+
+        // Manejar el botón GET /api/json
+document.getElementById('getHelloButton2').addEventListener('click', async () => {
+    responseDiv.textContent = 'Cargando...';
+    try {
+        const response = await fetch('http://localhost:8000/api/json');
+        if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+        const data = await response.json();
+        responseDiv.textContent = `Respuesta del servidor: ${JSON.stringify(data)}`;
+    } catch (error) {
+        responseDiv.textContent = `Error: ${error.message}`;
+    }
+});
+
+// Manejar el botón GET /api/json/{filename}
+document.getElementById('getHelloFileButton2').addEventListener('click', async () => {
+    const filename = prompt('Introduce el nombre del archivo:');
+    if (filename) {
+        responseDiv.textContent = 'Cargando...';
+        try {
+            const response = await fetch(`http://localhost:8000/api/json/${filename}`);
+            if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+            const data = await response.json();
+            responseDiv.textContent = `Respuesta del servidor: ${JSON.stringify(data)}`;
+        } catch (error) {
+            responseDiv.textContent = `Error: ${error.message}`;
+        }
+    }
+});
+
+// Manejar el botón POST /api/json
+document.getElementById('postHelloButton2').addEventListener('click', () => {
+    // Mostrar un modal para ingresar el nombre del archivo y su contenido
+    const modalHtml = `
+        <div id="modal" style="display: block; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+            <div style="background-color: white; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 300px;">
+                <h2>Crear Archivo JSON</h2>
+                <label for="filenameInput">Nombre del archivo:</label>
+                <input type="text" id="filenameInput" placeholder="Introduce el nombre del archivo">
+                <br><br>
+                <label for="contentInput">Contenido del archivo (JSON):</label>
+                <textarea id="contentInput" placeholder='{"key": "value"}'></textarea>
+                <br><br>
+                <button id="submitPostJson">Enviar</button>
+                <button id="closeModal">Cerrar</button>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Manejar el envío del formulario
+    document.getElementById('submitPostJson').addEventListener('click', async () => {
+        const filename = document.getElementById('filenameInput').value;
+        const content = document.getElementById('contentInput').value;
+        if (filename && content) {
+            responseDiv.textContent = 'Cargando...';
+            try {
+                const response = await fetch('http://localhost:8000/api/json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename, content }) // Enviar tanto el nombre como el contenido
+                });
+                if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+                const data = await response.json();
+                responseDiv.textContent = `Respuesta del servidor: ${JSON.stringify(data)}`;
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                document.getElementById('modal').remove(); // Cerrar el modal después de enviar
+            }
+        } else {
+            responseDiv.textContent = 'Por favor, completa ambos campos.';
+        }
+    });
+
+    // Manejar el cierre del modal
+    document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('modal').remove(); // Cerrar el modal
+    });
+});
+
+// Manejar el botón DELETE /api/json/{filename}
+document.getElementById('deleteHelloFileButton2').addEventListener('click', async () => {
+    const filename = prompt('Introduce el nombre del archivo para eliminar:');
+    if (filename) {
+        responseDiv.textContent = 'Cargando...';
+        try {
+            const response = await fetch(`http://localhost:8000/api/json/${filename}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+            const data = await response.json();
+            responseDiv.textContent = `Respuesta del servidor: ${JSON.stringify(data)}`;
+        } catch (error) {
+            responseDiv.textContent = `Error: ${error.message}`;
+        }
+    }
+});
+
+// Manejar el botón PUT /api/json/{filename}
+document.getElementById('putHelloFileButton2').addEventListener('click', () => {
+    // Mostrar un modal para ingresar el nombre del archivo y su nuevo contenido
+    const modalHtml = `
+        <div id="modal" style="display: block; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+            <div style="background-color: white; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 300px;">
+                <h2>Actualizar Archivo JSON</h2>
+                <label for="filenameInput">Nombre del archivo:</label>
+                <input type="text" id="filenameInput" placeholder="Introduce el nombre del archivo">
+                <br><br>
+                <label for="contentInput">Nuevo contenido del archivo (JSON):</label>
+                <textarea id="contentInput" placeholder='{"key": "value"}'></textarea>
+                <br><br>
+                <button id="submitPutJson">Actualizar</button>
+                <button id="closeModal">Cerrar</button>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Manejar el envío del formulario
+    document.getElementById('submitPutJson').addEventListener('click', async () => {
+        const filename = document.getElementById('filenameInput').value;
+        const content = document.getElementById('contentInput').value;
+        if (filename && content) {
+            responseDiv.textContent = 'Cargando...';
+            try {
+                const response = await fetch(`http://localhost:8000/api/json/${filename}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content }) // Enviar solo el nuevo contenido
+                });
+                if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+                const data = await response.json();
+                responseDiv.textContent = `Respuesta del servidor: ${JSON.stringify(data)}`;
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                document.getElementById('modal').remove(); // Cerrar el modal después de enviar
+            }
+        } else {
+            responseDiv.textContent = 'Por favor, completa ambos campos.';
+        }
+    });
+
+    // Manejar el cierre del modal
+    document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('modal').remove(); // Cerrar el modal
+    });
+
+    //-------------------------------------------------------------------------------------------------------------------------
+    // Aqui empieza la parte del csv
+    //-------------------------------------------------------------------------------------------------------------------------
+
+// Manejar el botón GET /api/csv
+document.getElementById('getCsvButton').addEventListener('click', async () => {
+    responseDiv.textContent = 'Cargando...';
+    try {
+        const response = await fetch('http://localhost:8000/api/csv');
+        if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+        const data = await response.text();
+        responseDiv.textContent = `Respuesta del servidor: ${data}`;
+    } catch (error) {
+        responseDiv.textContent = `Error: ${error.message}`;
+    }
+});
+
+// Manejar el botón GET /api/csv/{filename}
+document.getElementById('getCsvFileButton').addEventListener('click', async () => {
+    const filename = prompt('Introduce el nombre del archivo CSV:');
+    if (filename) {
+        responseDiv.textContent = 'Cargando...';
+        try {
+            const response = await fetch(`http://localhost:8000/api/csv/${filename}`);
+            if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+            const data = await response.text();
+            responseDiv.textContent = `Respuesta del servidor: ${data}`;
+        } catch (error) {
+            responseDiv.textContent = `Error: ${error.message}`;
+        }
+    }
+});
+
+// Manejar el botón POST /api/csv
+document.getElementById('postCsvButton').addEventListener('click', () => {
+    const modalHtml = `
+        <div id="modal" style="display: block; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+            <div style="background-color: white; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 300px;">
+                <h2>Crear Archivo CSV</h2>
+                <label for="csvFilenameInput">Nombre del archivo:</label>
+                <input type="text" id="csvFilenameInput" placeholder="Introduce el nombre del archivo">
+                <br><br>
+                <label for="csvContentInput">Contenido del archivo (CSV):</label>
+                <textarea id="csvContentInput" placeholder="Introduce el contenido del archivo, separado por comas"></textarea>
+                <br><br>
+                <button id="submitPostCsv">Enviar</button>
+                <button id="closeModal">Cerrar</button>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Manejar el envío del formulario
+    document.getElementById('submitPostCsv').addEventListener('click', async () => {
+        const filename = document.getElementById('csvFilenameInput').value;
+        const content = document.getElementById('csvContentInput').value;
+        if (filename && content) {
+            responseDiv.textContent = 'Cargando...';
+            try {
+                const response = await fetch('http://localhost:8000/api/csv', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename, content }) // Enviar tanto el nombre como el contenido
+                });
+                if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+                const data = await response.text();
+                responseDiv.textContent = `Respuesta del servidor: ${data}`;
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+              } finally {
+                document.getElementById('modal').remove(); // Cerrar el modal después de enviar
+            }
+        } else {
+            responseDiv.textContent = 'Por favor, completa ambos campos.';
+        }
+    });
+
+    // Manejar el cierre del modal
+    document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('modal').remove(); // Cerrar el modal
+    });
+});
+
+// Manejar el botón PUT /api/csv/{filename}
+document.getElementById('putCsvFileButton').addEventListener('click', () => {
+    const modalHtml = `
+        <div id="modal" style="display: block; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+            <div style="background-color: white; margin: 15% auto; padding: 20px; border: 1px solid #888; width: 300px;">
+                <h2>Actualizar Archivo CSV</h2>
+                <label for="csvFilenameInput">Nombre del archivo:</label>
+                <input type="text" id="csvFilenameInput" placeholder="Introduce el nombre del archivo">
+                <br><br>
+                <label for="csvContentInput">Nuevo contenido del archivo (CSV):</label>
+                <textarea id="csvContentInput" placeholder="Introduce el nuevo contenido del archivo, separado por comas"></textarea>
+                <br><br>
+                <button id="submitPutCsv">Actualizar</button>
+                <button id="closeModal">Cerrar</button>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // Manejar el envío del formulario
+    document.getElementById('submitPutCsv').addEventListener('click', async () => {
+        const filename = document.getElementById('csvFilenameInput').value;
+        const content = document.getElementById('csvContentInput').value;
+        if (filename && content) {
+            responseDiv.textContent = 'Cargando...';
+            try {
+                const response = await fetch(`http://localhost:8000/api/csv/${filename}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content }) // Enviar solo el nuevo contenido
+                });
+                if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+                const data = await response.text();
+                responseDiv.textContent = `Respuesta del servidor: ${data}`;
+            } catch (error) {
+                responseDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                document.getElementById('modal').remove(); // Cerrar el modal después de enviar
+            }
+        } else {
+            responseDiv.textContent = 'Por favor, completa ambos campos.';
+        }
+    });
+
+    // Manejar el cierre del modal
+    document.getElementById('closeModal').addEventListener('click', () => {
+        document.getElementById('modal').remove(); // Cerrar el modal
+    });
+});
+
+// Manejar el botón DELETE /api/csv/{filename}
+document.getElementById('deleteCsvFileButton').addEventListener('click', async () => {
+    const filename = prompt('Introduce el nombre del archivo CSV para eliminar:');
+    if (filename) {
+        responseDiv.textContent = 'Cargando...';
+        try {
+            const response = await fetch(`http://localhost:8000/api/csv/${filename}`, {
+                method: 'DELETE'
+            });
+            if (!response.ok) throw new Error(`Error: ${response.status} ${response.statusText}`);
+            const data = await response.text();
+            responseDiv.textContent = `Respuesta del servidor: ${data}`;
+        } catch (error) {
+            responseDiv.textContent = `Error: ${error.message}`;
+        }
+    }
+});
+});
+    </script>
+
+    </body>
+</html>
